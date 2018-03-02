@@ -120,4 +120,5 @@ class PredictionModel():
             df = pd.DataFrame.from_records([tuple(next)], columns=titles)
             data = data.append(df)
             counter += 1
+        # reshape data to groups of sums ("0-4" and so on)
         return(data)
