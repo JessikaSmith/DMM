@@ -13,6 +13,11 @@ class PredictionModel():
                         '25-29', '30-34', '35-39', '40-44', '45-49',
                         '50-54', '55-59', '60-64', '65-69', '70-74', '75-79',
                         '80-84', '85-89', '90-94', '95-99', '100']
+        self.set_of_age_groups = ['0-4', '5-9', '10-14', '15-19', '20-24',
+                                  '25-29', '30-34', '35-39', '40-44', '45-49',
+                                  '50-54', '55-59', '60-64', '65-69', '70-74', '75-79',
+                                  '80-84', '85-89', '90-94', '95-99', '100']
+        self.fem_fert_groups = ['20-24', '25-29', '30-34', '35-39']
         self.fem_data = self.extract_russia_data(file, fem_sheet)
         self.male_data = self.extract_russia_data(file, male_sheet)
         self.both_data = self.extract_russia_data(file, both_sheet)
@@ -28,30 +33,38 @@ class PredictionModel():
         subs = data[(data['area'] == 'Russian Federation') & (data['date'].isin([INITIAL_YEAR-5, INITIAL_YEAR]))]
         return subs
 
-    def fertility_rate(self, year):
+    def fertility_rate(self, year, type='both'):
 
-        groups = self.columns[10:14]
+        people_data = self.pred_dict[type]
+        groups = self.fem_fert_groups
         subs = self.fem_data[self.fem_data['date'] == year]
-        both_subs = self.both_data[self.both_data['date'] == year]
-        return both_subs['0-4'].values[0] / subs[groups].sum(axis=1).values[0]
+        people_subs = people_data[people_data['date'] == year]
+        return people_subs['0-4'].values[0] / subs[groups].sum(axis=1).values[0]
 
-    def fertility_rate_1_year(self, year):
+    def fertility_rate_1_year(self, year, type='both'):
 
-        groups = self.columns[10:14]
+        people_data = self.pred_dict[type]
+        groups = self.fem_fert_groups
         subs = self.fem_data[self.fem_data['date'] == year]
-        both_subs = self.both_data[self.both_data['date'] == year]
-        return ((both_subs['0-4'].values[0])/5) / subs[groups].sum(axis=1).values[0]
+        people_subs = people_data[people_data['date'] == year]
+        return ((people_subs['0-4'].values[0])/5) / subs[groups].sum(axis=1).values[0]
 
-    def surv_coeff(self, group):
+    def surv_coeff(self, group, data):
 
-        idx = self.both_data.columns.get_loc(group)
-        return self.both_data.iloc[1, idx + 1] / self.both_data.iloc[0, idx]
+        idx = self.data.columns.get_loc(group)
+        return self.data.iloc[1, idx + 1] / self.data.iloc[0, idx]
+
+    def count_coeffs(self, data):
+
+        coeffs = []
+        for group in self.set_of_age_groups[:-1]:
+            coeffs += [np.power(self.surv_coeff(group, data), 1/5)]*5
+        return coeffs
 
     def get_value_prediction(self, data, group, counter):
 
         idx = self.fem_data.columns.get_loc(group)
         return data.iloc[counter, idx]*self.coeffs[idx-7]
-
 
     # bad variant
     def brute_surv_coeff_1year(data, group):
@@ -63,21 +76,25 @@ class PredictionModel():
             coef += [(i + ((data.iloc[1, idx + 1] - data.iloc[0, idx]) / 5)) / i]
         return [np.mean(coef)]
 
+    def reshape_dataset(self, data):
+        # TODO: implement reshaping
+        return True
+
     def pred_model_5_years(self, num_years, type='both'):
         """simple implementation of model with 5 years step"""
 
         data = self.pred_dict['both'].copy()
-        fertility = self.fertility_rate(INITIAL_YEAR)
+        fertility = self.fertility_rate(INITIAL_YEAR, type)
         self.coeffs = []
-        for group in self.columns[6:26]:
-            self.coeffs.append(self.surv_coeff(group))
+        for group in self.set_of_age_groups[:-1]:
+            self.coeffs.append(self.surv_coeff(group, data))
         counter = 1
-        next = []
-        fem = self.fem_data[self.fem_data['date'] == INITIAL_YEAR][self.columns[10:14]].values.tolist()
+        fem = self.fem_data[self.fem_data['date'] == INITIAL_YEAR][self.fem_fert_groups].values.tolist()
         fem = fem[0]
+        next = []
         for i in range(INITIAL_YEAR, INITIAL_YEAR+num_years,5):
             next = [0] * 5 + [i + 5] + [0]
-            for group in self.columns[7:27]:
+            for group in self.set_of_age_groups[1:]:
                 next += [round(self.get_value_prediction(data, group, counter),3)]
             fem_sum = 0
             fem = np.multiply(self.coeffs[3:7], fem).tolist()
@@ -85,18 +102,17 @@ class PredictionModel():
             df = pd.DataFrame.from_records([tuple(next)], columns=self.columns)
             data = data.append(df)
             counter += 1
-        # fix coefficients to three positions after comma
         return data
 
     def pred_model_1_year(self, num_years, type = 'both'):
+        """simple implementation of model with 1 year step"""
 
         data = self.pred_dict['both'].copy()
-        coeffs = []
-        for group in self.columns[6:26]:
-            coeffs += [np.power(self.surv_coeff(group), 1/5)]*5
+        coeffs = self.count_coeffs(data)
         # TODO: fix fertility
         fertility = self.fertility_rate_1_year(INITIAL_YEAR)
         titles = ['date'] + [str(i) for i in range(101)]
+
         subs = data[data['date'] == INITIAL_YEAR].values[0]
         subs = subs[6:]
         vals = []
@@ -104,9 +120,9 @@ class PredictionModel():
             vals += [round(i/5,3)]*5
         vals = vals[0:len(vals) - 4]
         vals[-1] == subs[-1]
+
         data = pd.DataFrame.from_records([tuple([INITIAL_YEAR]+vals)], columns=titles)
-        fm = self.fem_data[self.fem_data['date'] == INITIAL_YEAR][self.columns[10:14]].values.tolist()
-        fm = fm[0]
+        fm = self.fem_data[self.fem_data['date'] == INITIAL_YEAR][self.fem_fert_groups].values.tolist()[0]
         fem = []
         for i in fm:
             fem += [i]*5
@@ -121,4 +137,5 @@ class PredictionModel():
             data = data.append(df)
             counter += 1
         # reshape data to groups of sums ("0-4" and so on)
+        # return self.reshape_dataset(data)
         return(data)
