@@ -51,8 +51,8 @@ class PredictionModel():
 
     def surv_coeff(self, group, data):
 
-        idx = self.data.columns.get_loc(group)
-        return self.data.iloc[1, idx + 1] / self.data.iloc[0, idx]
+        idx = data.columns.get_loc(group)
+        return data.iloc[1, idx + 1] / data.iloc[0, idx]
 
     def count_coeffs(self, data):
 
@@ -65,16 +65,6 @@ class PredictionModel():
 
         idx = self.fem_data.columns.get_loc(group)
         return data.iloc[counter, idx]*self.coeffs[idx-7]
-
-    # bad variant
-    def brute_surv_coeff_1year(data, group):
-
-        idx = data.columns.get_loc(group)
-        coef = []
-        for i in np.arange(data.iloc[0, idx], data.iloc[1, idx + 1], (data.iloc[1, idx + 1] - data.iloc[0, idx]) / 5):
-            print(i)
-            coef += [(i + ((data.iloc[1, idx + 1] - data.iloc[0, idx]) / 5)) / i]
-        return [np.mean(coef)]
 
     def reshape_dataset(self, data):
         # TODO: implement reshaping
@@ -95,7 +85,7 @@ class PredictionModel():
         for i in range(INITIAL_YEAR, INITIAL_YEAR+num_years,5):
             next = [0] * 5 + [i + 5] + [0]
             for group in self.set_of_age_groups[1:]:
-                next += [round(self.get_value_prediction(data, group, counter),3)]
+                next += [round(self.get_value_prediction(data, group, counter), 3)]
             fem_sum = 0
             fem = np.multiply(self.coeffs[3:7], fem).tolist()
             next[6] = round(sum(fem)*fertility, 3)
@@ -107,7 +97,7 @@ class PredictionModel():
     def pred_model_1_year(self, num_years, type = 'both'):
         """simple implementation of model with 1 year step"""
 
-        data = self.pred_dict['both'].copy()
+        data = self.pred_dict[type].copy()
         coeffs = self.count_coeffs(data)
         # TODO: fix fertility
         fertility = self.fertility_rate_1_year(INITIAL_YEAR)
@@ -133,9 +123,20 @@ class PredictionModel():
             next = [round(i,3) for i in next]
             fem = np.multiply(coeffs[21:41], fem).tolist()
             next[1] = round(sum(fem) * fertility, 3)
+            # def
             df = pd.DataFrame.from_records([tuple(next)], columns=titles)
             data = data.append(df)
             counter += 1
         # reshape data to groups of sums ("0-4" and so on)
         # return self.reshape_dataset(data)
         return(data)
+
+    # bad variant (jic)
+    def brute_surv_coeff_1year(data, group):
+
+        idx = data.columns.get_loc(group)
+        coef = []
+        for i in np.arange(data.iloc[0, idx], data.iloc[1, idx + 1], (data.iloc[1, idx + 1] - data.iloc[0, idx]) / 5):
+            print(i)
+            coef += [(i + ((data.iloc[1, idx + 1] - data.iloc[0, idx]) / 5)) / i]
+        return [np.mean(coef)]

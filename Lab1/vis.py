@@ -13,11 +13,10 @@ group = ['0-4', '5-9', '10-14', '15-19', '20-24',
 
 def profiles_m_f(fem_data, male_data, year, title):
 
-
     return True
 
 
-def show_profile(data, year, title):
+def show_profile(data, year, type, title):
 
     y = [y*1000 for y in data[data['date'] == year][group].values.tolist()[0]]
     trace = go.Scatter(
@@ -28,10 +27,30 @@ def show_profile(data, year, title):
         line=dict(
             color=('rgb(205, 12, 24)'))
     )
-    layout = dict(title='Demographic profile prediction for Russia in '+str(year),
-                  xaxis=dict(title='Group'),
+    layout = dict(title='Demographic profile prediction for Russia in '+str(year) + ' (' + type + ')',
+                  xaxis=dict(title='Age group'),
                   yaxis=dict(title='Amount of people'),
                   )
     data = [trace]
     fig = go.Figure(data=data, layout=layout)
     image.save_as(fig, filename=path_to_figure + title+'.jpeg')
+
+
+def profile_compare_years(data, years, type, title):
+
+    traces = []
+    for year in years:
+        y = [y * 1000 for y in data[data['date'] == year][group].values.tolist()[0]]
+        traces += [go.Scatter(
+            x=group,
+            y=y,
+            mode='lines+markers',
+            name=year)]
+    years = [str(year) for year in years]
+    layout = dict(title='Demographic profile prediction for Russia in ' + ', '.join(years) + ' (' + type + ')',
+                  xaxis=dict(title='Age group'),
+                  yaxis=dict(title='Amount of people'),
+                  )
+    fig = go.Figure(data=traces, layout=layout)
+    image.save_as(fig, filename=path_to_figure + title + '.jpeg')
+    return True
