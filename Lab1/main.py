@@ -16,9 +16,9 @@ def print_available_years(data):
     return
 
 type = 'female'
-prediction = model.pred_model_5_years(100, type)
-vis.show_profile(prediction, 2050, type, '2050 profile for females')
-vis.profile_compare_years(prediction, [2010, 2020, 2030], type, 'prediction for 2010 2020 2030 females')
+#prediction = model.pred_model_5_years(100, type)
+#vis.show_profile(prediction, 2050, type, '2050 profile for '+type)
+#vis.profile_compare_years(prediction, [2010, 2020, 2030], type, 'prediction for ' + str([2010, 2020, 2030])+ ' ' + type)
 
-prediction = model.pred_model_1_year(5)
-print_available_years(prediction)
+prediction = model.pred_model_1_year(5, type)
+print(prediction)

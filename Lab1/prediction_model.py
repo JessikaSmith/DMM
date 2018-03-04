@@ -64,7 +64,7 @@ class PredictionModel():
     def get_value_prediction(self, data, group, counter):
 
         idx = self.fem_data.columns.get_loc(group)
-        return data.iloc[counter, idx]*self.coeffs[idx-7]
+        return data.iloc[counter, idx]*self.coeffs[idx-8]
 
     def reshape_dataset(self, data):
         # TODO: implement reshaping
@@ -73,7 +73,7 @@ class PredictionModel():
     def pred_model_5_years(self, num_years, type='both'):
         """simple implementation of model with 5 years step"""
 
-        data = self.pred_dict['both'].copy()
+        data = self.pred_dict[type].copy()
         fertility = self.fertility_rate(INITIAL_YEAR, type)
         self.coeffs = []
         for group in self.set_of_age_groups[:-1]:
@@ -82,11 +82,12 @@ class PredictionModel():
         fem = self.fem_data[self.fem_data['date'] == INITIAL_YEAR][self.fem_fert_groups].values.tolist()
         fem = fem[0]
         next = []
-        for i in range(INITIAL_YEAR, INITIAL_YEAR+num_years,5):
+        for i in range(INITIAL_YEAR, INITIAL_YEAR+num_years, 5):
             next = [0] * 5 + [i + 5] + [0]
             for group in self.set_of_age_groups[1:]:
                 next += [round(self.get_value_prediction(data, group, counter), 3)]
             fem_sum = 0
+            # coeff for both sexes are used here
             fem = np.multiply(self.coeffs[3:7], fem).tolist()
             next[6] = round(sum(fem)*fertility, 3)
             df = pd.DataFrame.from_records([tuple(next)], columns=self.columns)
@@ -100,14 +101,14 @@ class PredictionModel():
         data = self.pred_dict[type].copy()
         coeffs = self.count_coeffs(data)
         # TODO: fix fertility
-        fertility = self.fertility_rate_1_year(INITIAL_YEAR)
+        fertility = self.fertility_rate_1_year(INITIAL_YEAR, type)
         titles = ['date'] + [str(i) for i in range(101)]
 
         subs = data[data['date'] == INITIAL_YEAR].values[0]
         subs = subs[6:]
         vals = []
         for i in subs:
-            vals += [round(i/5,3)]*5
+            vals += [round(i/5, 3)]*5
         vals = vals[0:len(vals) - 4]
         vals[-1] == subs[-1]
 
@@ -115,15 +116,15 @@ class PredictionModel():
         fm = self.fem_data[self.fem_data['date'] == INITIAL_YEAR][self.fem_fert_groups].values.tolist()[0]
         fem = []
         for i in fm:
-            fem += [i]*5
+            fem += [i/5]*5
         counter = 0
         for i in range(INITIAL_YEAR+1, INITIAL_YEAR + num_years + 1):
             next = [i, 0]
             next += np.multiply(coeffs, data.iloc[counter, 1:-1].tolist()).tolist()
-            next = [round(i,3) for i in next]
-            fem = np.multiply(coeffs[21:41], fem).tolist()
+            next = [round(i, 3) for i in next]
+            fem = np.multiply(coeffs[19:39], fem).tolist()
             next[1] = round(sum(fem) * fertility, 3)
-            # def
+
             df = pd.DataFrame.from_records([tuple(next)], columns=titles)
             data = data.append(df)
             counter += 1
