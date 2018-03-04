@@ -53,4 +53,3 @@ def profile_compare_years(data, years, type, title):
                   )
     fig = go.Figure(data=traces, layout=layout)
     image.save_as(fig, filename=path_to_figure + title + '.jpeg')
-    return True

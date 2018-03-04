@@ -15,10 +15,12 @@ def print_available_years(data):
     print(", ".join([str(i) for i in data["date"].tolist()]))
     return
 
-type = 'female'
+type = 'both'
 #prediction = model.pred_model_5_years(100, type)
 #vis.show_profile(prediction, 2050, type, '2050 profile for '+type)
 #vis.profile_compare_years(prediction, [2010, 2020, 2030], type, 'prediction for ' + str([2010, 2020, 2030])+ ' ' + type)
 
-prediction = model.pred_model_1_year(5, type)
+prediction = model.pred_model_1_year(20, type)
+#vis.show_profile(prediction, 2018, type, '1 year model 2018 profile for '+type)
+vis.profile_compare_years(prediction, [2010, 2018, 2024], type, '1 year model prediction for ' + str([2010, 2018, 2024])+ ' ' + type)
 print(prediction)

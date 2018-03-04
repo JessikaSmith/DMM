@@ -100,7 +100,6 @@ class PredictionModel():
 
         data = self.pred_dict[type].copy()
         coeffs = self.count_coeffs(data)
-        # TODO: fix fertility
         fertility = self.fertility_rate_1_year(INITIAL_YEAR, type)
         titles = ['date'] + [str(i) for i in range(101)]
 
@@ -111,6 +110,8 @@ class PredictionModel():
             vals += [round(i/5, 3)]*5
         vals = vals[0:len(vals) - 4]
         vals[-1] == subs[-1]
+
+        new_df = data[6:].copy()
 
         data = pd.DataFrame.from_records([tuple([INITIAL_YEAR]+vals)], columns=titles)
         fm = self.fem_data[self.fem_data['date'] == INITIAL_YEAR][self.fem_fert_groups].values.tolist()[0]
@@ -125,12 +126,21 @@ class PredictionModel():
             fem = np.multiply(coeffs[19:39], fem).tolist()
             next[1] = round(sum(fem) * fertility, 3)
 
+            new_next = []
+            for t in range(1, len(next)-5, 5):
+                val = 0
+                for j in range(5):
+                    val += next[t+j]
+                new_next += [val]
+            df = pd.DataFrame.from_records([tuple([i] + new_next + [next[-1]])], columns=['date']+self.set_of_age_groups)
+            new_df = new_df.append(df)
+
             df = pd.DataFrame.from_records([tuple(next)], columns=titles)
             data = data.append(df)
+
             counter += 1
-        # reshape data to groups of sums ("0-4" and so on)
-        # return self.reshape_dataset(data)
-        return(data)
+
+        return(new_df)
 
     # bad variant (jic)
     def brute_surv_coeff_1year(data, group):
