@@ -59,7 +59,7 @@ def profiles_m_f(fem_data, male_data, year, title):
         y=y,
         mode='lines+markers',
         name='female')
-    y = [y * 1000 for y in fem_data[male_data['date'] == year][group].values.tolist()[0]]
+    y = [y * 1000 for y in male_data[male_data['date'] == year][group].values.tolist()[0]]
     trace2 = go.Scatter(
         x=group,
         y=y,
