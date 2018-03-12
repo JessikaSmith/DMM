@@ -3,6 +3,9 @@ import numpy as np
 
 INITIAL_YEAR = 2005
 
+fem_pred_sheet = 'f; 2010-50, medium-fertility'
+male_pred_sheet = 'm; 2010-50, medium-fertility'
+both_pred_sheet = 'both; 2010-50, medium-fertility'
 
 class PredictionModel():
 
@@ -26,12 +29,27 @@ class PredictionModel():
             'male': self.male_data,
             'both': self.both_data
         }
+        self.fem_pred_data = self.extract_russia_data(file, fem_pred_sheet, 2)
+        self.male_pred_data = self.extract_russia_data(file, male_pred_sheet, 2)
+        self.both_pred_data = self.extract_russia_data(file, both_pred_sheet, 2)
+        self.given_pred = {
+            'female': self.fem_pred_data,
+            'male': self.male_pred_data,
+            'both': self.both_pred_data
+        }
 
-    def extract_russia_data(self, file_name, sheet_name):
+    def extract_russia_data(self, file_name, sheet_name, type = 1):
 
         data = pd.read_excel(file_name, sheetname=sheet_name, skiprows=6, names=self.columns)
-        subs = data[(data['area'] == 'Russian Federation') & (data['date'].isin([INITIAL_YEAR-5, INITIAL_YEAR]))]
+        if type == 1:
+            subs = data[(data['area'] == 'Russian Federation') & (data['date'].isin([INITIAL_YEAR-5, INITIAL_YEAR]))]
+        else:
+            subs = data[(data['area'] == 'Russian Federation')]
         return subs
+
+    def extract_given_prediction(self, type='both'):
+
+        return self.given_pred[type]
 
     def fertility_rate(self, year, type='both'):
 
@@ -41,6 +59,7 @@ class PredictionModel():
         people_subs = people_data[people_data['date'] == year]
         return people_subs['0-4'].values[0] / subs[groups].sum(axis=1).values[0]
 
+    # TODO: count fertility coeff (make it more sensible) and look at different scenarios (when the population will be stable)
     def fertility_rate_1_year(self, year, type='both'):
 
         people_data = self.pred_dict[type]
@@ -65,10 +84,6 @@ class PredictionModel():
 
         idx = self.fem_data.columns.get_loc(group)
         return data.iloc[counter, idx]*self.coeffs[idx-8]
-
-    def reshape_dataset(self, data):
-        # TODO: implement reshaping
-        return True
 
     def pred_model_5_years(self, num_years, type='both'):
         """simple implementation of model with 5 years step"""
