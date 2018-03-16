@@ -9,7 +9,6 @@ both_pred_sheet = 'both; 2010-50, medium-fertility'
 
 
 class PredictionModel:
-
     def __init__(self, file, fem_sheet, male_sheet, both_sheet):
 
         self.columns = ['index', 'variant', 'area', 'notes', 'code', 'date',
@@ -22,30 +21,28 @@ class PredictionModel:
                            '50-54', '55-59', '60-64', '65-69', '70-74', '75-79',
                            '80-84', '85-89', '90-94', '95-99', '100']
         self.fem_fert_groups = ['20-24', '25-29', '30-34', '35-39']
-        self.fem_data = self.extract_russia_data(file, fem_sheet)
-        self.male_data = self.extract_russia_data(file, male_sheet)
-        self.both_data = self.extract_russia_data(file, both_sheet)
+
         self.pred_dict = {
-            'female': self.fem_data,
-            'male': self.male_data,
-            'both': self.both_data
-        }
-        self.fem_pred_data = self.extract_russia_data(file, fem_pred_sheet, 2)
-        self.male_pred_data = self.extract_russia_data(file, male_pred_sheet, 2)
-        self.both_pred_data = self.extract_russia_data(file, both_pred_sheet, 2)
-        self.given_pred = {
-            'female': self.fem_pred_data,
-            'male': self.male_pred_data,
-            'both': self.both_pred_data
+            'female': self.extract_russia_data(file, fem_sheet),
+            'male': self.extract_russia_data(file, male_sheet),
+            'both': self.extract_russia_data(file, both_sheet)
         }
 
-    def extract_russia_data(self, file_name, sheet_name, type=1):
+        self.given_pred = {
+            'female': self.extract_russia_data(file, fem_pred_sheet),
+            'male': self.extract_russia_data(file, male_pred_sheet),
+            'both': self.extract_russia_data(file, both_pred_sheet)
+        }
+
+        # TODO: remove hardcode
+        self.male_babies_rate = 0.52
+        self.female_babies_rate = 0.48
+
+    def extract_russia_data(self, file_name, sheet_name):
 
         data = pd.read_excel(file_name, sheetname=sheet_name, skiprows=6, names=self.columns)
         russia_only = data.query('area == "Russian Federation"')
-        if type == 1:
-            russia_only = data[
-                (data['area'] == 'Russian Federation') & (data['date'].isin([INITIAL_YEAR - 5, INITIAL_YEAR]))]
+
         return russia_only
 
     def extract_given_prediction(self, type='both'):
@@ -85,79 +82,72 @@ class PredictionModel:
     def pred_model_1_year(self, num_years, type='both'):
         """simple implementation of model with 1 year step"""
 
-        data = self.pred_dict[type].copy()
+        selected = self.pred_dict[type].copy()
         females = self.pred_dict['female'].copy()
-        survival_coeffs = self.calculate_survival_coeffs_1_year(data, INITIAL_YEAR - 5, INITIAL_YEAR)
-        females_survival_coeffs = self.calculate_survival_coeffs_1_year(females, INITIAL_YEAR - 5, INITIAL_YEAR)
+        surv_coeffs = self.calculate_survival_coeffs_1_year(selected, INITIAL_YEAR - 5, INITIAL_YEAR)
+        fem_surv_coeffs = self.calculate_survival_coeffs_1_year(females, INITIAL_YEAR - 5, INITIAL_YEAR)
         fertility = self.fertility_rate_1_year(INITIAL_YEAR, type)
 
-        population = data.query('date == @INITIAL_YEAR')[self.age_groups]
-        females_population = females.query('date = @INITIAL_YEAR')[self.age_groups]
+        population = selected.query('date == @INITIAL_YEAR')[self.age_groups]
+        females = females.query('date == @INITIAL_YEAR')[self.age_groups]
 
-        new_age_groups = []
-        new_age_groups_fem = []
+        graduated_groups = []
+        graduated_fem_groups = []
+
         for group in population:
             if group == '100':
-                new_age_groups += [round(population[group].values[0] / 5, 3)]
-                new_age_groups_fem += [round(females_population[group].values[0] / 5, 3)]
+                graduated_groups += [round(population[group].values[0] / 5, 3)]
+                graduated_fem_groups += [round(females[group].values[0] / 5, 3)]
             else:
-                new_age_groups += [round(population[group].values[0] / 5, 3)] * 5
-                new_age_groups_fem += [round(females_population[group].values[0] / 5, 3)] * 5
+                graduated_groups += [round(population[group].values[0] / 5, 3)] * 5
+                graduated_fem_groups += [round(females[group].values[0] / 5, 3)] * 5
 
-        last_year_population = new_age_groups
-        last_year_population_fem = new_age_groups_fem
+        prev_population = graduated_groups
+        prev_females = graduated_fem_groups
+
+        cols = [str(i) for i in range(len(graduated_groups))]
+        predicted_df = pd.DataFrame.from_records([[INITIAL_YEAR] + graduated_groups], columns=['date'] + cols)
 
         for year in range(INITIAL_YEAR + 1, INITIAL_YEAR + num_years):
-            current_year_population = [0] * len(new_age_groups)
-            current_year_population_fem = [0] * len(new_age_groups_fem)
-            for group_idx in range(0, len(new_age_groups)):
+            next_population = [0] * len(graduated_groups)
+            next_females = [0] * len(graduated_fem_groups)
+            for group_idx in range(0, len(graduated_groups)):
                 if group_idx == 0:
                     # calculate amount of new babies
-                    current_year_population[group_idx] = sum(last_year_population_fem[19:39]) * fertility
+                    next_population[group_idx] = sum(prev_females[19:39]) * fertility
+                    next_females[group_idx] = sum(prev_females[19:39]) * fertility * self.female_babies_rate
                 else:
-                    current_year_population[group_idx] = last_year_population[group_idx - 1] * survival_coeffs[group_idx - 1]
-                    current_year_population_fem[group_idx] = last_year_population_fem[group_idx - 1] * females_survival_coeffs[group_idx - 1]
-            last_year_population = current_year_population
+                    next_population[group_idx] = \
+                        prev_population[group_idx - 1] * surv_coeffs[group_idx - 1]
+                    next_females[group_idx] = \
+                        prev_females[group_idx - 1] * fem_surv_coeffs[group_idx - 1]
 
-        titles = ['date'] + [str(i) for i in range(101)]
+            new_row = pd.DataFrame.from_records([[year] + next_population], columns=['date'] + cols)
+            predicted_df = predicted_df.append(new_row)
+            prev_population = next_population
 
-        subs = data[data['date'] == INITIAL_YEAR].values[0]
-        # TODO: refactor this
-        subs = subs[6:]
-        vals = []
-        for i in subs:
-            vals += [round(i / 5, 3)] * 5
-        vals = vals[0:len(vals) - 4]
-        vals[-1] == subs[-1]
+        return self.group_by_default_age_groups(predicted_df)
 
-        new_df = data[6:].copy()
+    def group_by_default_age_groups(self, df):
+        grouped_df = pd.DataFrame(columns=['date'] + self.age_groups)
 
-        data = pd.DataFrame.from_records([tuple([INITIAL_YEAR] + vals)], columns=titles)
-        fm = self.fem_data[self.fem_data['date'] == INITIAL_YEAR][self.fem_fert_groups].values.tolist()[0]
-        fem = []
-        for i in fm:
-            fem += [i / 5] * 5
-        counter = 0
-        for i in range(INITIAL_YEAR + 1, INITIAL_YEAR + num_years + 1):
-            next = [i, 0]
-            next += np.multiply(survival_coeffs, data.iloc[counter, 1:-1].tolist()).tolist()
-            next = [round(i, 3) for i in next]
-            fem = np.multiply(survival_coeffs[19:39], fem).tolist()
-            next[1] = round(sum(fem) * fertility, 3)
-
-            new_next = []
-            for t in range(1, len(next) - 5, 5):
-                val = 0
-                for j in range(5):
-                    val += next[t + j]
-                new_next += [val]
-            df = pd.DataFrame.from_records([tuple([i] + new_next + [next[-1]])],
-                                           columns=['date'] + self.age_groups)
-            new_df = new_df.append(df)
-
-            df = pd.DataFrame.from_records([tuple(next)], columns=titles)
-            data = data.append(df)
-
-            counter += 1
-
-        return (new_df)
+        ages = [str(i) for i in range(101)]
+        # TODO: improve this somehow
+        for _, row in df.iterrows():
+            sums = []
+            len_of_group = 0
+            sum_of_group = 0.0
+            for age in ages:
+                if age == '100':
+                    sums.append(row[age])
+                else:
+                    len_of_group += 1
+                    if len_of_group < 5:
+                        sum_of_group += row[age]
+                    else:
+                        sums.append(sum_of_group)
+                        len_of_group = 0
+                        sum_of_group = 0.0
+            new_row = pd.DataFrame.from_records([[row['date']] + sums], columns=['date'] + self.age_groups)
+            grouped_df = grouped_df.append(new_row)
+        return grouped_df
