@@ -79,14 +79,11 @@ class PredictionModel:
         idx = self.fem_data.columns.get_loc(group)
         return data.iloc[counter, idx] * self.coeffs[idx - 8]
 
-    def pred_model_1_year(self, num_years, type='both'):
-        """simple implementation of model with 1 year step"""
-
+    def pred_model_1_year_with_fertility(self, num_years, fertility, type='both'):
         selected = self.pred_dict[type].copy()
         females = self.pred_dict['female'].copy()
         surv_coeffs = self.calculate_survival_coeffs_1_year(selected, INITIAL_YEAR - 5, INITIAL_YEAR)
         fem_surv_coeffs = self.calculate_survival_coeffs_1_year(females, INITIAL_YEAR - 5, INITIAL_YEAR)
-        fertility = self.fertility_rate_1_year(INITIAL_YEAR, type)
 
         population = selected.query('date == @INITIAL_YEAR')[self.age_groups]
         females = females.query('date == @INITIAL_YEAR')[self.age_groups]
@@ -127,6 +124,11 @@ class PredictionModel:
             prev_population = next_population
 
         return self.group_by_default_age_groups(predicted_df)
+
+    def pred_model_1_year(self, num_years, type='both'):
+        fertility = self.fertility_rate_1_year(INITIAL_YEAR, type)
+
+        return self.pred_model_1_year_with_fertility(num_years, fertility, type)
 
     def group_by_default_age_groups(self, df):
         grouped_df = pd.DataFrame(columns=['date'] + self.age_groups)
