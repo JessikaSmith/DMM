@@ -171,4 +171,4 @@ class PredictionModel:
         total = 0
         for group in self.age_groups:
             total += data[group].values
-        return total
+        return list(total)

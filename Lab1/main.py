@@ -18,13 +18,13 @@ def get_population(years, fertility, type):
     test = model.pred_model_1_year_with_fertility(years, fertility, type)
     population = []
     for i in range(2005, 2005 + years + 1):
-        population.append(list(model.total_population(test, i)))
+        population+= model.total_population(test, i)
     return ([fertility, population])
 
 
 def main():
     type = 'both'
-    for i in range(130, 201):
+    for i in range(201, 221):
         print(get_population(100, i / 100, type))
         # print("")
     # vis.show_profile(prediction, 2018, type, '1 year model 2018 profile for '+type)
