@@ -111,8 +111,9 @@ class PredictionModel:
             for group_idx in range(0, len(graduated_groups)):
                 if group_idx == 0:
                     # calculate amount of new babies
-                    next_population[group_idx] = sum(prev_females[19:39]) * fertility
-                    next_females[group_idx] = sum(prev_females[19:39]) * fertility * self.female_babies_rate
+                    next_population[group_idx] = fertility * sum(prev_females[19:39]) / 5.0 / 4.0
+                    next_females[group_idx] = fertility * self.female_babies_rate * sum(prev_females[19:39]) / 5.0 / 4.0
+
                 else:
                     next_population[group_idx] = \
                         prev_population[group_idx - 1] * surv_coeffs[group_idx - 1]
@@ -130,7 +131,18 @@ class PredictionModel:
 
         return self.pred_model_1_year_with_fertility(num_years, fertility, type)
 
+    def pred_model_with_total_fertility(self, num_years, type='both'):
+        females = self.pred_dict['female'].copy()
+        females = females.query('date == @INITIAL_YEAR')[self.age_groups]
+        s = 0.0
+        for group in self.fem_fert_groups:
+            fem_amount = females[group]
+            s += 361.271 / fem_amount
+        fertility = s * 5
+        return self.pred_model_1_year_with_fertility(num_years, fertility.item(), type)
+
     def group_by_default_age_groups(self, df):
+        print(df)
         grouped_df = pd.DataFrame(columns=['date'] + self.age_groups)
 
         ages = [str(i) for i in range(101)]
@@ -144,12 +156,22 @@ class PredictionModel:
                     sums.append(row[age])
                 else:
                     len_of_group += 1
-                    if len_of_group < 5:
+                    if len_of_group <= 5:
                         sum_of_group += row[age]
                     else:
                         sums.append(sum_of_group)
                         len_of_group = 0
                         sum_of_group = 0.0
+            print(sums)
             new_row = pd.DataFrame.from_records([[row['date']] + sums], columns=['date'] + self.age_groups)
             grouped_df = grouped_df.append(new_row)
         return grouped_df
+
+    def total_population(self, data, year):
+        data = data.query('date == @year')
+        print(data)
+        total = 0
+        for group in self.age_groups:
+            total += data[group]
+
+        return total
