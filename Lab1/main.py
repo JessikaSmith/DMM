@@ -14,17 +14,24 @@ def print_available_years(data):
     return
 
 
-type = 'both'
-# prediction = model.pred_model_5_years(100, type)
-# vis.show_profile(prediction, 2050, type, '2050 profile for '+type)
-# vis.profile_compare_years(prediction, [2010, 2020, 2030], type, 'prediction for ' + str([2010, 2020, 2030])+ ' ' + type)
-test = model.pred_model_1_year_with_fertility(2, 1.6, type)
-print(model.total_population(test, 2005))
-#prediction = model.pred_model_1_year_with_fertility(5000, 100, type)
-#vis.show_profile(test, 2050, type, '1 year model 2018 profile (fert = 70) for '+type)
-#prediction = model.pred_model_1_year(118, type)
-#vis.show_profile(prediction, 2018, type, '1 year model 2018 profile for '+type)
-#vis.profile_compare_years(prediction, [3000, 4000, 5000], type, '1 year model prediction (fert = 100) for ' + str([3000, 4000, 5000])+ ' ' + type)
-# print(prediction[prediction['date'] == 2050])
-#given = model.extract_given_prediction(type)
-#vis.compare_profiles(prediction, given, 2045, 'prediction_comp_2045')
+def get_population(years, fertility, type):
+    test = model.pred_model_1_year_with_fertility(years, fertility, type)
+    population = []
+    for i in range(2005, 2005 + years + 1):
+        population.append(list(model.total_population(test, i)))
+    return ([fertility, population])
+
+
+def main():
+    type = 'both'
+    for i in range(130, 201):
+        print(get_population(100, i / 100, type))
+        # print("")
+    # vis.show_profile(prediction, 2018, type, '1 year model 2018 profile for '+type)
+    # print(prediction[prediction['date'] == 2050])
+    # given = model.extract_given_prediction(type)
+    # vis.compare_profiles(test, given, 2045, 'prediction_comp_2045 (fert = 1.37)')
+
+
+if __name__ == '__main__':
+    main()

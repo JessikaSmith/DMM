@@ -142,7 +142,6 @@ class PredictionModel:
         return self.pred_model_1_year_with_fertility(num_years, fertility.item(), type)
 
     def group_by_default_age_groups(self, df):
-        print(df)
         grouped_df = pd.DataFrame(columns=['date'] + self.age_groups)
 
         ages = [str(i) for i in range(101)]
@@ -153,6 +152,7 @@ class PredictionModel:
             sum_of_group = 0.0
             for age in ages:
                 if age == '100':
+                    sums.append(sum_of_group)
                     sums.append(row[age])
                 else:
                     len_of_group += 1
@@ -160,18 +160,15 @@ class PredictionModel:
                         sum_of_group += row[age]
                     else:
                         sums.append(sum_of_group)
-                        len_of_group = 0
-                        sum_of_group = 0.0
-            print(sums)
+                        len_of_group = 1
+                        sum_of_group = row[age]
             new_row = pd.DataFrame.from_records([[row['date']] + sums], columns=['date'] + self.age_groups)
             grouped_df = grouped_df.append(new_row)
         return grouped_df
 
     def total_population(self, data, year):
         data = data.query('date == @year')
-        print(data)
         total = 0
         for group in self.age_groups:
-            total += data[group]
-
+            total += data[group].values
         return total
