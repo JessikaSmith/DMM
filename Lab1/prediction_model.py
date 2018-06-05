@@ -9,7 +9,7 @@ both_pred_sheet = 'both; 2010-50, medium-fertility'
 
 
 class PredictionModel:
-    def __init__(self, file, fem_sheet, male_sheet, both_sheet):
+    def __init__(self, file, fem_sheet, male_sheet, both_sheet, babies_fraction):
 
         self.columns = ['index', 'variant', 'area', 'notes', 'code', 'date',
                         '0-4', '5-9', '10-14', '15-19', '20-24',
@@ -34,9 +34,9 @@ class PredictionModel:
             'both': self.extract_russia_data(file, both_pred_sheet)
         }
 
-        # TODO: remove hardcode
-        self.male_babies_rate = 0.52
-        self.female_babies_rate = 0.48
+        self.babies_fraction = babies_fraction
+        self.male_babies_rate = babies_fraction / (babies_fraction + 1)
+        self.female_babies_rate = 1 - self.male_babies_rate
 
     def extract_russia_data(self, file_name, sheet_name):
 
