@@ -9,7 +9,7 @@ both_pred_sheet = 'both; 2010-50, medium-fertility'
 
 
 class PredictionModel:
-    def __init__(self, file, fem_sheet, male_sheet, both_sheet, babies_fraction):
+    def __init__(self, file, fem_sheet, male_sheet, both_sheet, babies_fraction=1.0):
 
         self.columns = ['index', 'variant', 'area', 'notes', 'code', 'date',
                         '0-4', '5-9', '10-14', '15-19', '20-24',
@@ -35,6 +35,9 @@ class PredictionModel:
         }
 
         self.babies_fraction = babies_fraction
+        self.calc_babies_fraction(self.babies_fraction)
+
+    def calc_babies_fraction(self, babies_fraction):
         self.male_babies_rate = babies_fraction / (babies_fraction + 1)
         self.female_babies_rate = 1 - self.male_babies_rate
 
@@ -79,7 +82,9 @@ class PredictionModel:
         idx = self.fem_data.columns.get_loc(group)
         return data.iloc[counter, idx] * self.coeffs[idx - 8]
 
-    def pred_model_1_year_with_fertility(self, num_years, fertility, type='both'):
+    def pred_model_1_year_with_fertility(self, num_years, fertility, type='both', babies_fraction=1.0):
+        self.calc_babies_fraction(babies_fraction)
+
         selected = self.pred_dict[type].copy()
         females = self.pred_dict['female'].copy()
         surv_coeffs = self.calculate_survival_coeffs_1_year(selected, INITIAL_YEAR - 5, INITIAL_YEAR)
