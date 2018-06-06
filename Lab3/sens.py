@@ -10,10 +10,15 @@ INITIAL_YEAR = 2005
 def sensitivity():
     model = init_model()
     problem = {
-        'num_vars': 2,
-        'names': ['fertility', 'babies_fraction'],
+        'num_vars':7,
+        'names': ['fertility', 'babies_fraction', 'x1', 'x14', 'x18', 'x28', 'x41'],
         'bounds': [[1, 3],
-                   [0.4, 0.6]]
+                   [0.4, 0.6],
+                   [0.1, 1],
+                   [0.1, 1],
+                   [0.1, 1],
+                   [0.1, 1],
+                   [0.1, 1]]
     }
 
     params = sample(problem, 10)
@@ -42,9 +47,10 @@ def eval(model, param_values, year):
     predict_pop = list()
     for params in param_values:
         # print("params: ", params)
-        fertility, babies_fraction = params
+        fertility, babies_fraction, x1, x14, x18, x28, x41 = params
         predicted = model.pred_model_1_year_with_fertility(year - INITIAL_YEAR + 1, fertility,
-                                                           babies_fraction=babies_fraction)
+                                                           babies_fraction=babies_fraction,
+                                                           x1=x1, x14=x14, x18=x18, x28=x28, x41=x41)
         total_pop = model.total_population(predicted, year)
         # print("predicted total population:", total_pop)
         predict_pop.append(total_pop)

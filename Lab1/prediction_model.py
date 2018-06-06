@@ -68,13 +68,20 @@ class PredictionModel:
 
         return population_to / population_from
 
-    def calculate_survival_coeffs_1_year(self, data, initial_year, final_year):
+    def calculate_survival_coeffs_1_year(self, data, initial_year, final_year,
+                                         x1=None, x14=None, x18=None, x28=None, x41=None):
 
         coeffs = []
         for group_idx in range(0, len(self.age_groups) - 1):
             coeff = self.surv_coeff(data, self.age_groups[group_idx], self.age_groups[group_idx + 1],
                                     initial_year, final_year)
             coeffs += [np.power(coeff, 1 / 5)] * 5
+        if x1 is not None:
+            coeffs[0] = x1
+            coeffs[13] = x14
+            coeffs[17] = x18
+            coeffs[27] = x28
+            coeffs[40] = x41
         return coeffs
 
     def get_value_prediction(self, data, group, counter):
@@ -82,13 +89,16 @@ class PredictionModel:
         idx = self.fem_data.columns.get_loc(group)
         return data.iloc[counter, idx] * self.coeffs[idx - 8]
 
-    def pred_model_1_year_with_fertility(self, num_years, fertility, type='both', babies_fraction=1.0):
+    def pred_model_1_year_with_fertility(self, num_years, fertility, type='both', babies_fraction=1.0, x1=None,
+                                         x14=None, x18=None, x28=None, x41=None):
         self.calc_babies_fraction(babies_fraction)
 
         selected = self.pred_dict[type].copy()
         females = self.pred_dict['female'].copy()
-        surv_coeffs = self.calculate_survival_coeffs_1_year(selected, INITIAL_YEAR - 5, INITIAL_YEAR)
-        fem_surv_coeffs = self.calculate_survival_coeffs_1_year(females, INITIAL_YEAR - 5, INITIAL_YEAR)
+        surv_coeffs = self.calculate_survival_coeffs_1_year(selected, INITIAL_YEAR - 5, INITIAL_YEAR,
+                                                            x1=x1, x14=x14, x18=x18, x28=x28, x41=x41)
+        fem_surv_coeffs = self.calculate_survival_coeffs_1_year(females, INITIAL_YEAR - 5, INITIAL_YEAR,
+                                                                x1=x1, x14=x14, x18=x18, x28=x28, x41=x41)
 
         population = selected.query('date == @INITIAL_YEAR')[self.age_groups]
         females = females.query('date == @INITIAL_YEAR')[self.age_groups]
@@ -116,7 +126,6 @@ class PredictionModel:
             for group_idx in range(0, len(graduated_groups)):
                 if group_idx == 0:
                     # calculate amount of new babies
-                    print(prev_females[19:39])
                     next_population[group_idx] = fertility * sum(prev_females[19:39]) / 5.0 / 4.0
                     next_females[group_idx] = self.female_babies_rate * next_population[group_idx]
                 else:
@@ -146,6 +155,7 @@ class PredictionModel:
             s += 361.271 / fem_amount
         fertility = s * 5
         return self.pred_model_1_year_with_fertility(num_years, fertility.item(), type)
+
 
     def group_by_default_age_groups(self, df):
         grouped_df = pd.DataFrame(columns=['date'] + self.age_groups)
