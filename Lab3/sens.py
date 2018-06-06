@@ -13,7 +13,7 @@ def sensitivity():
         'num_vars': 2,
         'names': ['fertility', 'babies_fraction'],
         'bounds': [[1, 3],
-                   [0.05, 1]]
+                   [0.4, 0.6]]
     }
 
     params = sample(problem, 10)
@@ -37,6 +37,7 @@ def init_model():
     return model
 
 
+# several years at the same time
 def eval(model, param_values, year):
     predict_pop = list()
     for params in param_values:

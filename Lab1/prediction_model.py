@@ -38,7 +38,7 @@ class PredictionModel:
         self.calc_babies_fraction(self.babies_fraction)
 
     def calc_babies_fraction(self, babies_fraction):
-        self.male_babies_rate = babies_fraction / (babies_fraction + 1)
+        self.male_babies_rate = babies_fraction
         self.female_babies_rate = 1 - self.male_babies_rate
 
     def extract_russia_data(self, file_name, sheet_name):
@@ -116,9 +116,9 @@ class PredictionModel:
             for group_idx in range(0, len(graduated_groups)):
                 if group_idx == 0:
                     # calculate amount of new babies
+                    print(prev_females[19:39])
                     next_population[group_idx] = fertility * sum(prev_females[19:39]) / 5.0 / 4.0
-                    next_females[group_idx] = fertility * self.female_babies_rate * sum(prev_females[19:39]) / 5.0 / 4.0
-
+                    next_females[group_idx] = self.female_babies_rate * next_population[group_idx]
                 else:
                     next_population[group_idx] = \
                         prev_population[group_idx - 1] * surv_coeffs[group_idx - 1]
@@ -128,6 +128,7 @@ class PredictionModel:
             new_row = pd.DataFrame.from_records([[year] + next_population], columns=['date'] + cols)
             predicted_df = predicted_df.append(new_row)
             prev_population = next_population
+            prev_females = next_females
 
         return self.group_by_default_age_groups(predicted_df)
 
