@@ -3,10 +3,12 @@ import pandas as pd
 
 INITIAL_YEAR = 2005
 
+INITIAL_GIVEN_YEAR = 1950
+FINAL_GIVEN_YEAR = 2000
+
 fem_pred_sheet = 'f; 2010-50, medium-fertility'
 male_pred_sheet = 'm; 2010-50, medium-fertility'
 both_pred_sheet = 'both; 2010-50, medium-fertility'
-
 
 class PredictionModel:
     def __init__(self, file, fem_sheet, male_sheet, both_sheet, babies_fraction=1.0):
@@ -72,7 +74,7 @@ class PredictionModel:
                                          x1=None, x14=None, x18=None, x28=None, x41=None):
 
         coeffs = []
-        for group_idx in range(0, len(self.age_groups) - 1):
+        for group_idx in range(0, len(self.age_groups) - 5):
             coeff = self.surv_coeff(data, self.age_groups[group_idx], self.age_groups[group_idx + 1],
                                     initial_year, final_year)
             coeffs += [np.power(coeff, 1 / 5)] * 5
@@ -156,7 +158,6 @@ class PredictionModel:
         fertility = s * 5
         return self.pred_model_1_year_with_fertility(num_years, fertility.item(), type)
 
-
     def group_by_default_age_groups(self, df):
         grouped_df = pd.DataFrame(columns=['date'] + self.age_groups)
 
@@ -188,3 +189,36 @@ class PredictionModel:
         for group in self.age_groups:
             total += data[group].values
         return list(total)
+
+    def surv_coeffs_from_data(self):
+        coeffs = list()
+        for year in range(INITIAL_GIVEN_YEAR + 5, FINAL_GIVEN_YEAR+1, 5):
+            coeffs.append(self.calculate_survival_coeffs_1_year(self.pred_dict['both'].copy(), year - 5, year))
+
+        return coeffs
+
+    def babies_fraction_from_data(self):
+        male_proc = []
+        fem_proc = []
+        for year in range(INITIAL_GIVEN_YEAR, FINAL_GIVEN_YEAR + 1, 5):
+            male_proc.append(self.pred_dict['male'].query('date == @year')["0-4"].values[0] / \
+                             self.pred_dict['both'].query('date == @year')["0-4"].values[0])
+            fem_proc.append(1 - male_proc[-1])
+        return male_proc, fem_proc
+
+    def fertility_full(self):
+        fert = list()
+        for year in range(INITIAL_GIVEN_YEAR, FINAL_GIVEN_YEAR + 1, 5):
+            fert.append(self.fertility_from_data(year))
+
+        return fert
+
+    def fertility_from_data(self, year):
+        all_fems = sum(self.pred_dict['female'].query('date == @year')[self.fem_fert_groups].values[0])
+        next_year = year + 5
+        babies = self.pred_dict['both'].query('date == @next_year')["0-4"].values[0]
+
+        return babies * 4.0 / all_fems
+
+    def get_params_variability(self):
+        pass

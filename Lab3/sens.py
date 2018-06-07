@@ -2,9 +2,14 @@ import numpy as np
 from SALib.analyze import sobol
 from SALib.sample.saltelli import sample
 
+from Lab3 import vis
 from Lab1.prediction_model import PredictionModel
 
 INITIAL_YEAR = 2005
+name = '../Lab1/age_data.xls'
+fem_sheet = 'f; 1950-2005, estimates'
+male_sheet = 'm; 1950-2005, estimates'
+both_sheet = 'both; 1950-2005, estimates'
 
 
 def sensitivity():
@@ -33,16 +38,11 @@ def sensitivity():
 
 
 def init_model():
-    name = '../Lab1/age_data.xls'
-    fem_sheet = 'f; 1950-2005, estimates'
-    male_sheet = 'm; 1950-2005, estimates'
-    both_sheet = 'both; 1950-2005, estimates'
     model = PredictionModel(name, fem_sheet, male_sheet, both_sheet)
-
+    model.get_params_variability()
     return model
 
 
-# several years at the same time
 def eval(model, param_values, year):
     predict_pop = list()
     for params in param_values:
@@ -58,4 +58,9 @@ def eval(model, param_values, year):
     return np.array(predict_pop)
 
 
-sensitivity()
+# sensitivity()
+model = PredictionModel(name, fem_sheet, male_sheet, both_sheet)
+coeffs = model.surv_coeffs_from_data()
+years = [i for i in range(1950, 1950+(len(coeffs)*5)-1, 5)]
+vis.coeff_visualization(coeffs, years)
+#model.get_params_variability()
