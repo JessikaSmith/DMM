@@ -21,3 +21,34 @@ def coeff_visualization(data, years):
                   )
     fig = go.Figure(data=trace, layout=layout)
     image.save_as(fig, filename=path_to_figure + 'check_coeffs.jpeg')
+
+
+def sensitivity_analysis(si, names, year):
+    trace1 = go.Bar(
+        x=names,
+        y=si["S1"],
+        name='S1',
+        error_y=dict(
+            type='data',
+            array=si['S1_conf'],
+            visible=True
+        )
+
+    )
+    trace2 = go.Bar(
+        x=names,
+        y=si['ST'],
+        name='Total',
+        error_y=dict(
+            type='data',
+            array=si['ST_conf'],
+            visible=True
+        )
+    )
+    data = [trace1,trace2]
+    layout = go.Layout(
+        barmode='group',
+        title=''.join(['Sensitivity analysis for ',str(year)])
+    )
+    fig = go.Figure(data=data, layout=layout)
+    image.save_as(fig, filename=''.join([path_to_figure,'sensitivity',str(year),'.jpeg']))

@@ -26,6 +26,8 @@ def sensitivity(fertility, ratio, x1, x14, x18, x28, x41):
                    [x41['min'], x41['max']]]
     }
 
+    # print(problem['bounds'])
+
     params = sample(problem, 10)
     years = [2015, 2025, 2055, 2070, 2105]
 
@@ -34,12 +36,12 @@ def sensitivity(fertility, ratio, x1, x14, x18, x28, x41):
         population = eval(model, params, year)
         population = population.flatten()
         si = sobol.analyze(problem, population, print_to_console=False)
-        print(si['S1'])
+        vis.sensitivity_analysis(si, problem['names'], year)
 
 
 def init_model():
     model = PredictionModel(name, fem_sheet, male_sheet, both_sheet)
-    model.get_params_variability()
+    # model.get_params_variability()
     return model
 
 
