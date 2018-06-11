@@ -12,18 +12,18 @@ male_sheet = 'm; 1950-2005, estimates'
 both_sheet = 'both; 1950-2005, estimates'
 
 
-def sensitivity():
+def sensitivity(fertility, ratio, x1, x14, x18, x28, x41):
     model = init_model()
     problem = {
-        'num_vars':7,
+        'num_vars': 7,
         'names': ['fertility', 'babies_fraction', 'x1', 'x14', 'x18', 'x28', 'x41'],
-        'bounds': [[1, 3],
-                   [0.4, 0.6],
-                   [0.1, 1],
-                   [0.1, 1],
-                   [0.1, 1],
-                   [0.1, 1],
-                   [0.1, 1]]
+        'bounds': [[fertility["min"], fertility["max"]],
+                   [ratio['min'], ratio['max']],
+                   [x1['min'], x1['max']],
+                   [x14['min'], x14['max']],
+                   [x18['min'], x18['max']],
+                   [x28['min'], x28['max']],
+                   [x41['min'], x41['max']]]
     }
 
     params = sample(problem, 10)
@@ -60,7 +60,8 @@ def eval(model, param_values, year):
 
 # sensitivity()
 model = PredictionModel(name, fem_sheet, male_sheet, both_sheet)
-coeffs = model.surv_coeffs_from_data()
-years = [i for i in range(1950, 1950+(len(coeffs)*5)-1, 5)]
-vis.coeff_visualization(coeffs, years)
-#model.get_params_variability()
+fertility, ratio, x1, x14, x18, x28, x41 = model.get_params_variability()
+sensitivity(fertility, ratio, x1, x14, x18, x28, x41)
+# years = [i for i in range(1950, 1950 + (len(coeffs) * 5) - 1, 5)]
+# vis.coeff_visualization(coeffs, years)
+# model.get_params_variability()

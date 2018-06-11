@@ -10,6 +10,7 @@ fem_pred_sheet = 'f; 2010-50, medium-fertility'
 male_pred_sheet = 'm; 2010-50, medium-fertility'
 both_pred_sheet = 'both; 2010-50, medium-fertility'
 
+
 class PredictionModel:
     def __init__(self, file, fem_sheet, male_sheet, both_sheet, babies_fraction=1.0):
 
@@ -71,10 +72,10 @@ class PredictionModel:
         return population_to / population_from
 
     def calculate_survival_coeffs_1_year(self, data, initial_year, final_year,
-                                         x1=None, x14=None, x18=None, x28=None, x41=None):
+                                         x1=None, x14=None, x18=None, x28=None, x41=None, secret_num=1):
 
         coeffs = []
-        for group_idx in range(0, len(self.age_groups) - 5):
+        for group_idx in range(0, len(self.age_groups) - secret_num):
             coeff = self.surv_coeff(data, self.age_groups[group_idx], self.age_groups[group_idx + 1],
                                     initial_year, final_year)
             coeffs += [np.power(coeff, 1 / 5)] * 5
@@ -190,11 +191,11 @@ class PredictionModel:
             total += data[group].values
         return list(total)
 
-    def surv_coeffs_from_data(self):
+    def surv_coeffs_from_data(self, secret_num=1):
         coeffs = list()
-        for year in range(INITIAL_GIVEN_YEAR + 5, FINAL_GIVEN_YEAR+1, 5):
-            coeffs.append(self.calculate_survival_coeffs_1_year(self.pred_dict['both'].copy(), year - 5, year))
-
+        for year in range(INITIAL_GIVEN_YEAR + 5, FINAL_GIVEN_YEAR + 1, 5):
+            coeffs.append(self.calculate_survival_coeffs_1_year(self.pred_dict['both'].copy(), year - 5, year,
+                                                                secret_num=secret_num))
         return coeffs
 
     def babies_fraction_from_data(self):
@@ -204,7 +205,7 @@ class PredictionModel:
             male_proc.append(self.pred_dict['male'].query('date == @year')["0-4"].values[0] / \
                              self.pred_dict['both'].query('date == @year')["0-4"].values[0])
             fem_proc.append(1 - male_proc[-1])
-        return male_proc, fem_proc
+        return male_proc
 
     def fertility_full(self):
         fert = list()
@@ -221,4 +222,30 @@ class PredictionModel:
         return babies * 4.0 / all_fems
 
     def get_params_variability(self):
-        pass
+        fertility = {}
+        ratio = {}
+        coeffs = self.surv_coeffs_from_data(secret_num=5)
+        x1 = []
+        x14 = []
+        x18 = []
+        x28 = []
+        x41 = []
+        for i in coeffs:
+            x1.append(i[0])
+            x14.append(i[13])
+            x18.append(i[17])
+            x28.append(i[27])
+            x41.append(i[40])
+
+        x1 = {"min": min(x1), "max": max(x1)}
+        x14 = {"min": min(x14), "max": max(x14)}
+        x18 = {"min": min(x18), "max": max(x18)}
+        x28 = {"min": min(x28), "max": max(x28)}
+        x41 = {"min": min(x41), "max": max(x41)}
+
+        fertility["min"] = min(self.fertility_full())
+        fertility["max"] = max(self.fertility_full())
+        ratio["min"] = min(self.babies_fraction_from_data())
+        ratio["max"] = max(self.babies_fraction_from_data())
+
+        return fertility, ratio, x1, x14, x18, x28, x41
