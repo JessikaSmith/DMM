@@ -39,8 +39,8 @@ def onmouseclick(event):
 def onkeypress(event):
     global live_cells
     neighborhood = ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1))
-    new_cells_state = dict()
     for _ in range(SIMULATION_TIME):
+        new_cells_state = dict()
         matrix = np.zeros((N, N))
         for key in list(live_cells):
             # apply rule to the cell itself
