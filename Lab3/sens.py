@@ -26,9 +26,9 @@ def sensitivity(fertility, ratio, x1, x14, x18, x28, x41):
                    [x41['min'], x41['max']]]
     }
 
-    # print(problem['bounds'])
+    print(problem['bounds'])
 
-    params = sample(problem, 10)
+    params = sample(problem, 50)
     years = [2015, 2025, 2055, 2070, 2105]
 
     for year in years:
@@ -41,7 +41,6 @@ def sensitivity(fertility, ratio, x1, x14, x18, x28, x41):
 
 def init_model():
     model = PredictionModel(name, fem_sheet, male_sheet, both_sheet)
-    # model.get_params_variability()
     return model
 
 

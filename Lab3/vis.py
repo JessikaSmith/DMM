@@ -25,30 +25,30 @@ def coeff_visualization(data, years):
 
 def sensitivity_analysis(si, names, year):
     trace1 = go.Bar(
-        x=names,
-        y=si["S1"],
+        x=names[1:],
+        y=si["S1"][1:],
         name='S1',
         error_y=dict(
             type='data',
-            array=si['S1_conf'],
+            array=si['S1_conf'][1:],
             visible=True
         )
 
     )
     trace2 = go.Bar(
-        x=names,
-        y=si['ST'],
+        x=names[1:],
+        y=si['ST'][1:],
         name='Total',
         error_y=dict(
             type='data',
-            array=si['ST_conf'],
+            array=si['ST_conf'][1:],
             visible=True
         )
     )
-    data = [trace1,trace2]
+    data = [trace1, trace2]
     layout = go.Layout(
         barmode='group',
         title=''.join(['Sensitivity analysis for ',str(year)])
     )
     fig = go.Figure(data=data, layout=layout)
-    image.save_as(fig, filename=''.join([path_to_figure,'sensitivity',str(year),'.jpeg']))
+    image.save_as(fig, filename=''.join([path_to_figure,'groups_coeffs_only',str(year),'.jpeg']))
