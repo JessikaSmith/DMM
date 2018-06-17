@@ -26,17 +26,23 @@ def sensitivity(fertility, ratio, x1, x14, x18, x28, x41):
                    [x41['min'], x41['max']]]
     }
 
-    print(problem['bounds'])
+    params = sample(problem, 10)
+    years = [i for i in range(2005, 2106, 5)]
 
-    params = sample(problem, 50)
-    years = [2015, 2025, 2055, 2070, 2105]
+    simulated_population = []
 
     for year in years:
         print("YEAR: ", year)
         population = eval(model, params, year)
         population = population.flatten()
-        si = sobol.analyze(problem, population, print_to_console=False)
-        vis.sensitivity_analysis(si, problem['names'], year)
+        simulated_population.append(population)
+        # si = sobol.analyze(problem, population, print_to_console=False)
+        # vis.sensitivity_analysis(si, problem['names'], year)
+        # vis.sensitivity_analysis(si, problem['names'], year, num=1)
+    max_population = [max(i) for i in simulated_population]
+    min_population = [min(i) for i in simulated_population]
+    avg_population = [np.mean(i) for i in simulated_population]
+    vis.uncertainty_plot(min_population, max_population, avg_population, years)
 
 
 def init_model():
@@ -53,7 +59,6 @@ def eval(model, param_values, year):
                                                            babies_fraction=babies_fraction,
                                                            x1=x1, x14=x14, x18=x18, x28=x28, x41=x41)
         total_pop = model.total_population(predicted, year)
-        # print("predicted total population:", total_pop)
         predict_pop.append(total_pop)
 
     return np.array(predict_pop)
