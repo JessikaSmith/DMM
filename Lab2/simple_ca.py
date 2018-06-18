@@ -21,6 +21,14 @@ class SimpleCA:
         i, j = np.where(self.state == 1)
         self.living = sorted(list(zip(i, j)))
 
+    def insert_pattern(self, pattern, x_offset=0, y_offset=0):
+
+        if x_offset + pattern.shape[0] < self.size and y_offset + pattern.shape[1] < self.size:
+            self.state = np.zeros((self.size, self.size))
+            self.state[x_offset:x_offset + pattern.shape[0], y_offset:y_offset + pattern.shape[1]] = pattern
+        else:
+            raise ValueError('Grid size does not correspond to pattern size')
+
     def next_state(self):
 
         new_state = np.copy(self.state)
@@ -56,3 +64,35 @@ class SimpleCA:
             return 1
 
         return self.state[x, y]
+
+
+def generate_static_figure(mode):
+    f = open('figure_patterns/static/static_' + str(mode) + '.txt')
+    figure = load_figure(f)
+
+    return figure
+
+
+def generate_oscillator_figure(mode):
+    f = open('figure_patterns/oscillator/osc_' + str(mode) + '.txt')
+    figure = load_figure(f)
+    return figure
+
+
+def generate_moving_figure(mode):
+    f = open('figure_patterns/moving/moving_' + str(mode) + '.txt')
+    figure = load_figure(f)
+    return figure
+
+
+def load_figure(file):
+    x, y = map(int, file.readline().split())
+    figure = np.zeros((y, x))
+    for j in range(y):
+        row = list(map(int, file.readline().split()))
+        for i in range(len(row)):
+            figure[j, i] = row[i]
+
+    file.close()
+
+    return figure

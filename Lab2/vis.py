@@ -3,6 +3,7 @@ import matplotlib.animation as animation
 from matplotlib import colors
 
 from simple_ca import SimpleCA
+from simple_ca import generate_moving_figure
 
 matplotlib.use('TkAgg')
 
@@ -38,4 +39,6 @@ def save_anim_as_gif(name, anim,
 
 
 ca = SimpleCA(30, True)
-show_simulation(ca, 30, 30)
+
+ca.insert_pattern(generate_moving_figure(2), 5, 5)
+show_simulation(ca, 100, 80)
