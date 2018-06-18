@@ -56,9 +56,3 @@ class SimpleCA:
             return 1
 
         return self.state[x, y]
-
-
-ca = SimpleCA(10, True)
-
-for _ in range(100):
-    ca.next_state()
