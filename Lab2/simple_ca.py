@@ -26,6 +26,8 @@ class SimpleCA:
         if x_offset + pattern.shape[0] < self.size and y_offset + pattern.shape[1] < self.size:
             self.state = np.zeros((self.size, self.size))
             self.state[x_offset:x_offset + pattern.shape[0], y_offset:y_offset + pattern.shape[1]] = pattern
+
+            self.update_living()
         else:
             raise ValueError('Grid size does not correspond to pattern size')
 
@@ -66,6 +68,19 @@ class SimpleCA:
         return self.state[x, y]
 
 
+def cycle_length():
+    ca = SimpleCA(10)
+    ca.insert_pattern(generate_oscillator_figure(3))
+    initial = np.copy(ca.state)
+    ca.next_state()
+    len = 1
+    while not np.array_equal(initial, ca.state):
+        ca.next_state()
+        len += 1
+
+    print("cycle was found with length: %d" % len)
+
+
 def generate_static_figure(mode):
     f = open('figure_patterns/static/static_' + str(mode) + '.txt')
     figure = load_figure(f)
@@ -96,3 +111,6 @@ def load_figure(file):
     file.close()
 
     return figure
+
+
+cycle_length()
