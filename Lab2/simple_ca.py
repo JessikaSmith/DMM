@@ -22,6 +22,17 @@ class SimpleCA:
         self.living = sorted(list(zip(i, j)))
 
     def next_state(self):
+
+        new_state = np.copy(self.state)
+        cells = self.cells_to_check()
+
+        for x, y in cells:
+            new_state[x, y] = self.recalculate_cell(x, y)
+
+        self.state = new_state
+        self.update_living()
+
+    def cells_to_check(self):
         cells_to_check = list(self.living)
         # add all neibs of the living cells
         for cell in self.living:
@@ -30,13 +41,7 @@ class SimpleCA:
                 if idx not in cells_to_check:
                     cells_to_check.append(idx)
 
-        new_state = np.copy(self.state)
-
-        for x, y in cells_to_check:
-            new_state[x, y] = self.recalculate_cell(x, y)
-
-        self.state = new_state
-        self.update_living()
+        return cells_to_check
 
     def recalculate_cell(self, x, y):
         hood_indices = [[], []]
