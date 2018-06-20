@@ -111,6 +111,3 @@ def load_figure(file):
     file.close()
 
     return figure
-
-
-cycle_length()
