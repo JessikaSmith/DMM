@@ -2,6 +2,9 @@ from collections import Counter
 
 import numpy as np
 
+from simple_ca import generate_oscillator_figure
+from simple_ca import generate_static_figure
+
 HOOD = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
 
 
@@ -15,6 +18,8 @@ class EventCA:
             self.init_random_state()
 
         self.update_living()
+
+        self.monitor = Monitor()
 
     def init_random_state(self):
         self.state = np.random.randint(2, size=(self.size, self.size))
@@ -74,7 +79,11 @@ class EventCA:
                 if idx not in cells_to_check:
                     cells_to_check.append(idx)
 
-        return cells_to_check
+        print("before filter: %d" % len(cells_to_check))
+        static_cells = self.monitor.find_static_patterns(self.state)
+        resulted = [cell for cell in cells_to_check if cell not in static_cells]
+        print("after filter: %d" % len(resulted))
+        return resulted
 
     def recalculate_cell(self, x, y):
         hood_indices = [[], []]
@@ -98,7 +107,38 @@ class Event:
         self.old_value = old_value
         self.new_value = new_value
 
-# ca = EventCA(10, True)
-# ca.next_event_queue()
-# print(ca.cells_for_view())
-# ca.execute_events()
+
+class Monitor:
+    def __init__(self):
+        self.static = []
+        self.osc = []
+        self._load_patterns()
+
+    def _load_patterns(self):
+        for mode in range(1, 5):
+            self.static.append(Monitor.add_padding(generate_static_figure(mode)))
+        for mode in range(1, 4):
+            self.osc.append(Monitor.add_padding(generate_oscillator_figure(mode)))
+
+    def find_static_patterns(self, state):
+        result = np.zeros(state.shape)
+        for pattern in self.static:
+            size_x, size_y = pattern.shape
+            for x in range(0, len(state) - size_x + 1):
+                for y in range(0, len(state[0]) - size_y + 1):
+                    if np.array_equal(state[x:x + size_y, y:y + size_y], pattern):
+                        result[x:x + size_y, y:y + size_y] = np.ones((size_x, size_y))
+
+        i, j = np.where(result == 1)
+        return list(zip(i, j))
+
+    @staticmethod
+    def add_padding(pattern):
+        return np.pad(pattern, ((1, 1), (1, 1)), 'constant')
+
+# mon = Monitor()
+#
+# print(mon.find_static_patterns(np.asarray([[0, 0, 0, 0, 1],
+#                                            [0, 1, 1, 0, 1],
+#                                            [0, 1, 1, 0, 1],
+#                                            [0, 0, 0, 0, 1]], dtype=np.float32)))
